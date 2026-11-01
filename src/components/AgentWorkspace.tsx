@@ -10,10 +10,26 @@ type Props = { bot: Bot; onClose: () => void };
 type Filter = "all" | "active" | "waiting" | "archived";
 
 function taskState(task: NonNullable<Bot["tasks"]>[number]) {
-  if (task.busy) return { label: "Đang chạy", tone: "text-accent", Icon: Clock3, key: "active" as const };
+  if (task.busy || task.activity === "working") return { label: "Đang chạy", tone: "text-accent", Icon: Clock3, key: "active" as const };
   if (task.waitingForTeammates) return { label: "Chờ Agent khác", tone: "text-warning", Icon: PauseCircle, key: "waiting" as const };
+  if (task.activity === "waiting-on-you") return { label: "Cần bạn phản hồi", tone: "text-warning", Icon: PauseCircle, key: "waiting" as const };
+  if (task.activity === "parked.computer") return { label: "Đang chờ máy tính", tone: "text-warning", Icon: PauseCircle, key: "waiting" as const };
   if (task.closedBy || task.archivedAt) return { label: "Đã lưu trữ", tone: "text-ink-tertiary", Icon: Archive, key: "archived" as const };
-  return { label: "Đang chờ", tone: "text-ink-secondary", Icon: Circle, key: "all" as const };
+  if (task.activity === "dead") return { label: "Agent đã dừng", tone: "text-danger", Icon: Circle, key: "all" as const };
+  if (task.activity === "no-signal") return { label: "Mất kết nối", tone: "text-danger", Icon: Circle, key: "all" as const };
+  return { label: "Sẵn sàng", tone: "text-ink-secondary", Icon: Circle, key: "all" as const };
+}
+
+function taskUsage(task: NonNullable<Bot["tasks"]>[number]): string | null {
+  const usage = task.usage;
+  if (!usage) return null;
+  const tokens = usage.input + usage.output;
+  const compactTokens = new Intl.NumberFormat("vi-VN", { notation: "compact", maximumFractionDigits: 1 }).format(tokens);
+  const parts = [usage.turns + " lượt", compactTokens + " token"];
+  if (typeof usage.costUsd === "number") {
+    parts.push(new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 3 }).format(usage.costUsd));
+  }
+  return parts.join(" · ");
 }
 
 function taskDate(task: NonNullable<Bot["tasks"]>[number]): string | null {
@@ -179,7 +195,10 @@ export function AgentWorkspace({ bot, onClose }: Props) {
                         <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
                           <span className={cn("text-[10px] font-medium", status.tone)}>{status.label}</span>
                           {date && <><span className="text-ink-tertiary">·</span><time className="text-[10px] text-ink-tertiary">{date}</time></>}
+                          {task.surface && <><span className="text-ink-tertiary">·</span><span className="text-[10px] text-ink-tertiary">{task.surface === "vm" ? "Máy ảo" : task.surface === "browser" ? "Trình duyệt" : task.surface === "cloud" ? "Cloud" : "Máy cục bộ"}</span></>}
+                          {task.unread && <span className="rounded-md bg-accent/10 px-1.5 py-0.5 text-[9px] font-medium text-accent">Chưa đọc</span>}
                         </div>
+                        {taskUsage(task) && <p className="mt-1.5 text-[10px] tabular-nums text-ink-tertiary">{taskUsage(task)}</p>}
                         <div className="mt-2.5 flex justify-end">
                           {task.threadId === bot.threadId ? (
                             <span className="inline-flex items-center gap-1 rounded-md bg-accent/10 px-2 py-1 text-[10px] font-medium text-accent">
@@ -210,7 +229,7 @@ export function AgentWorkspace({ bot, onClose }: Props) {
             <div className="min-w-0">
               <p className="text-[10px] font-semibold text-ink">Dữ liệu phiên làm việc</p>
               <p className="mt-0.5 break-all text-[10px] leading-4 text-ink-secondary">Thread: {bot.threadId}</p>
-              <p className="mt-1 text-[10px] leading-4 text-ink-tertiary">Chọn một tác vụ để mở lại đúng hội thoại; tạo tác vụ mới bằng nút phía trên. Việc chạy Agent tiếp tục qua luồng chat gốc.</p>
+              <p className="mt-1 text-[10px] leading-4 text-ink-tertiary">Trạng thái và mức sử dụng lấy từ dữ liệu tác vụ của OpenMausBot. Chọn một tác vụ để mở lại hội thoại; tạo tác vụ mới bằng nút phía trên. Agent tiếp tục chạy qua runtime gốc.</p>
             </div>
           </div>
         </footer>
