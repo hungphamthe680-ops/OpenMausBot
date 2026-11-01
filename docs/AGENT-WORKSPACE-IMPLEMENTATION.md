@@ -124,3 +124,14 @@ The follow-up source inspection identified additional outbound paths that must b
 5. Run the migration and DPAPI tests on a real Windows environment. A non-Windows CI run cannot certify Windows DPAPI behavior.
 
 **Status:** this audit records concrete code paths and release blockers; it does not claim that those paths are already gated or that attachment files have been encrypted.
+
+### Follow-up test coverage — 2026-11-01
+
+Added `server/data-protection.test.ts` with focused unit coverage for the existing privacy primitives:
+
+- Vietnamese-oriented classifier categories and the guarantee that classifier output does not contain matched values.
+- One-use consent challenge binding to provider and exact payload, including replay, provider mismatch, payload mismatch, and expiry.
+- AES-256-GCM round-trip, invalid key size, and ciphertext tampering.
+- Metadata-only audit output.
+
+These are **primitive unit tests only**. They do not prove the application dispatch boundary, remote extractor, attachments, Agent handoffs, MCP, retries, or failover are gated. They do not test Windows DPAPI. CI results must be checked for the new commit before reporting these tests as passing.
