@@ -24,6 +24,8 @@ on:
   # workflow allowed to publish releases.
   push:
     branches: [feature/agent-workspace-premium-ui]
+  pull_request:
+    branches: [main]
 
 jobs:
   package:
