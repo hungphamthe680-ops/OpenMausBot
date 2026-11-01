@@ -83,3 +83,24 @@ Before marking this feature complete, implement and test all of the following:
 9. Performance tests on large PDFs and office documents, with bounded memory and concurrency.
 
 Do not merge or enable a partially implemented gate as if it were complete. Preserve existing MCP, Skills, Agents, credentials, and conversation history throughout implementation.
+
+## Privacy implementation progress (not production-complete)
+
+Added `server/data-protection.ts` with:
+- Local Vietnamese-oriented heuristic indicators for national IDs, phone numbers, email, address, financial and contract language. It returns category counts only, not matched values.
+- One-use outbound consent challenges bound to the exact provider and SHA-256 payload hash, with expiry and replay rejection.
+- Metadata-only JSONL audit writing (provider, decision, categories, payload hash and operation id; no prompt or file content).
+- AES-256-GCM authenticated encryption primitives.
+- Windows DPAPI CurrentUser protect/unprotect helper for a 32-byte data key; key bytes are passed over stdin, not command-line arguments.
+
+**Important: these are primitives, not yet an active end-to-end privacy boundary.** They are not yet wired into every provider adapter's `sendTurn`, generated text/review calls, attachment extraction, retries/failover, teammate dispatch, or MCP-mediated provider calls. The classifier is heuristic and can produce false positives/negatives; it is not a guarantee that all Vietnamese personal data is detected. The DPAPI helper has not been executed on a Windows host, and no encrypted key-file lifecycle/rotation/recovery or Credential Manager integration is active. Existing attachment files and conversation history have not been encrypted or migrated.
+
+Do not enable or advertise the privacy feature as enforced until:
+1. A single mandatory dispatch boundary covers all external model/provider paths, including retries, failover and subagent handoffs.
+2. Sensitive attachments are classified from extracted local text before any upload; unsupported/failed extraction pauses dispatch.
+3. The consent UI displays the exact provider and data categories/excerpts and binds approval to an immutable payload hash.
+4. A protected key lifecycle is implemented and tested on Windows; encrypted file writes use atomic replacement and recoverable migration.
+5. Integration tests assert zero provider calls on missing, expired, replayed, wrong-provider, or payload-mismatched consent.
+6. Windows DPAPI, Credential Manager (if selected), restart/recovery, and legacy data compatibility are tested on Windows.
+
+No current claim of full dispatch enforcement or Windows runtime validation is made.
