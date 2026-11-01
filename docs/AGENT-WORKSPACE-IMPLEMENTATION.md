@@ -3,33 +3,37 @@
 ## Working branch
 `feature/agent-workspace-premium-ui`
 
-## Non-negotiable compatibility rules
-- Keep the existing ChatView as the primary conversation surface.
-- Add Agent Workspace as a sibling panel in the existing App shell; do not replace ChatView.
-- Reuse existing bot/thread/task identifiers and runtime event streams.
-- Do not introduce a parallel chat-history store or migrate existing conversation data.
-- Do not modify MCP server configuration, Skills assignments, agent definitions, or credentials as part of the UI work.
+## Current implementation
+
+- `src/App.tsx` keeps the existing `ChatView` as the primary conversation surface and adds an opt-in Agent Workspace toggle for the selected bot.
+- `src/components/AgentWorkspace.tsx` renders a sibling panel using the selected bot's existing `tasks` collection.
+- The panel includes task counts, status filters, title search, recent task rows, timestamps, empty states, and responsive close behavior.
+- The panel uses existing semantic skin tokens (for example `bg-panel`, `bg-card`, `text-ink`, and `border-hairline`), so it follows the app's existing skin system rather than introducing a parallel theme.
+- Task status is derived from existing task fields (`busy`, `waitingForTeammates`, `closedBy`, and `archivedAt`). The panel does not fabricate progress or launch agents.
+
+## Compatibility boundaries
+
+- Keep `ChatView` as the primary conversation surface; do not replace it.
+- Reuse existing bot, thread, and task identifiers.
+- Do not introduce a parallel chat-history store or migrate conversation data.
+- Do not modify MCP server configuration, Skills assignments, agent definitions, credentials, or persistence as part of this UI-only change.
 - Extend the existing skin system; do not replace `src/lib/skins`, `ThemeRow`, or the saved skin-choice mechanism.
 - Preserve existing ComputerPanel, InspectorPanel, ActivityPanel, and their open/close behavior.
 
-## Source architecture confirmed
-- `src/App.tsx` owns the workspace shell and sibling side-panel composition.
-- `src/components/ChatView.tsx` is the central conversation view and remains intact.
-- `src/components/InspectorPanel.tsx` already exposes run/event inspection.
-- `src/components/ActivityPanel.tsx` already exposes live activity and runtime updates.
-- `src/components/ThemeRow.tsx` already supports system, light, and dark skin choices.
+## Current limitations
 
-## Implementation sequence
-1. Add an opt-in Agent Workspace panel to the App shell, without changing ChatView.
-2. Drive task status and progress from existing task/thread data and runtime events; do not fabricate task execution or progress.
-3. Add responsive collapse/expand behavior and avoid panel collisions with existing side panels.
-4. Polish light/dark surfaces by extending existing skin tokens.
-5. Add focused tests for panel visibility, task/thread switching, and preservation of existing panel behavior.
-6. Run typecheck, lint, tests, and a Windows packaging smoke test before calling the build complete.
+This is currently a read-only task overview, not a complete agent orchestration workspace. It does not yet:
+- create or assign tasks;
+- start, stop, or retry agents;
+- stream live tool logs or execution events into the panel;
+- expose per-agent delegation controls or progress timelines.
+
+Those capabilities must be built on verified existing runtime APIs and event streams, not simulated in the UI.
 
 ## Validation status
-- Fork and write permissions verified.
-- Feature branch created from the fork's `main`.
-- Architecture inspected.
-- No application source files changed yet.
-- No build or test results claimed.
+
+- GitHub repository and feature branch are accessible.
+- The branch is 9 commits ahead of `main` and 0 commits behind it at the time of this update.
+- Pull Request #1 remains open as a Draft.
+- Source integration has been inspected.
+- Automated typecheck, lint, test, production build, and Windows packaging/runtime checks have not yet been executed in this environment. Do not treat the feature as build-verified until those checks pass.
