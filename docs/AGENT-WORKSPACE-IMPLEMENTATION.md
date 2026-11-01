@@ -104,3 +104,23 @@ Do not enable or advertise the privacy feature as enforced until:
 6. Windows DPAPI, Credential Manager (if selected), restart/recovery, and legacy data compatibility are tested on Windows.
 
 No current claim of full dispatch enforcement or Windows runtime validation is made.
+
+## Privacy integration audit — 2026-11-01
+
+The follow-up source inspection identified additional outbound paths that must be covered before the privacy feature can be enabled:
+
+- **Primary provider turns:** provider drivers are registered through `server/harness/registry.ts`; the actual turn-dispatch/send boundary still needs to be traced through the host and driver adapter contracts. A gate in the chat composer alone would not cover CLI-backed engines.
+- **Remote extraction is a separate provider path:** `server/extractor/index.ts` selects Workers AI, the included relay, or OpenRouter and calls the backend directly. `server/extractor/remote.ts` posts extracted text and optional base64 images. This path can transmit PDF/Office-derived content independently of the normal chat turn and must have its own consent enforcement or share the same mandatory outbound boundary.
+- **Attachment persistence is currently plaintext:** `server/attachments.ts` stores uploads under `DATA_DIR/attachments` and exposes the existing attachment storage lifecycle. The AES-GCM helper is not integrated into upload, read, streaming, retention, or backup paths. Encrypting only newly uploaded files would also leave historical attachments readable.
+- **Agent handoffs and retries:** `server/agents-turn.ts` identifies handoff/continuation turns and `server/drivers/retry.ts` classifies transient failures; `server/limit-failover.ts` can move a thread to a different engine. Each retry/failover attempt must re-evaluate the destination provider and payload approval. An approval for provider A must never authorize provider B.
+- **MCP is not equivalent to model dispatch:** existing outbound connector approvals in `server/outbound-hold.ts` govern connector actions, not arbitrary AI-provider requests. MCP tools that call remote AI services need a distinct provider/payload consent check at their actual network boundary.
+
+### Release blockers
+
+1. Trace and wrap every provider network/CLI dispatch, including the extractor, behind a single fail-closed policy boundary.
+2. Add a user-visible consent request that identifies the exact provider, data categories, and immutable payload digest; require a fresh approval for a changed payload, provider, retry, or failover.
+3. Add attachment encryption as a versioned storage format with DPAPI-protected key lifecycle, atomic migration, backup/restore compatibility, and rollback. Do not rewrite the existing attachment directory until this is tested on Windows against a copy and a verified backup.
+4. Add integration tests with fake providers/MCP servers proving zero outbound calls on missing, expired, replayed, provider-mismatched, or payload-mismatched consent. Include PDF/Word/Excel extraction, Agent handoff, retry and failover.
+5. Run the migration and DPAPI tests on a real Windows environment. A non-Windows CI run cannot certify Windows DPAPI behavior.
+
+**Status:** this audit records concrete code paths and release blockers; it does not claim that those paths are already gated or that attachment files have been encrypted.
