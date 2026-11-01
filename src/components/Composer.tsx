@@ -1,7 +1,7 @@
 import { directMessageSent, roomMessageSent } from "@/lib/product-events";
 import { useComposerDictation } from "@/lib/use-composer-dictation";
 import { useCallback, useEffect, useMemo, useRef, useState, type SetStateAction } from "react";
-import { ArrowUp, Clock, Mic, Paperclip, Square, X } from "lucide-react";
+import { ArrowUp, Clock, Mic, Square, X } from "lucide-react";
 import { useStore, visibleMessages, currentTaskBot, type Bot, type Group, type InstanceInfo, type Message } from "@/state/store";
 import { cn } from "@/lib/cn";
 import { PHONE_LAYOUT, useMediaQuery } from "@/lib/use-media-query";
@@ -478,6 +478,8 @@ export function Composer({
     return () => window.clearTimeout(timeout);
   }, [busy, pendingCount, steering]);
   const fileInput = useRef<HTMLInputElement>(null);
+  const imageInput = useRef<HTMLInputElement>(null);
+  const folderInput = useRef<HTMLInputElement>(null);
   const [attachmentNotice, setAttachmentNotice] = useState<string | null>(null);
   const modeBot = group ? undefined : bot;
   const { choice: approvalChoice, dialogs: approvalDialogs } = useThreadApproval(modeBot);
@@ -785,6 +787,8 @@ export function Composer({
           <div className="flex shrink-0 items-center">
             <PhonePlus
               onAttach={() => fileInput.current?.click()}
+              onAttachImages={() => imageInput.current?.click()}
+              onAttachFolder={() => folderInput.current?.click()}
               goal={goal}
               teach={!advanced && canLearn ? teachTask : undefined}
               approval={approvalChoice && modeBot && { name: modeBot.name, choice: approvalChoice }}
@@ -801,29 +805,29 @@ export function Composer({
         <div className={singleRow ? cn("min-w-0 flex-1 rounded-[26px] px-3 py-1.5", ELEVATED_FLOAT) : "contents"}>
         {replyTo && <ComposerReplyStrip message={replyTo} fallbackName={bot?.name} onClear={onClearReply} />}
         <div data-composer-row className={cn("flex items-end", simpleDock ? "gap-1.5" : "gap-1", !singleRow && !simpleDock && "@max-[30rem]/composer:flex-wrap", stacked && "flex-wrap")}>
-          <input
-            ref={fileInput}
-            type="file"
-            multiple
-            className="hidden"
-            onChange={(e) => {
-              void pickFiles(e.target.files);
-              // Reset so picking the same file again still fires onChange.
-              e.target.value = "";
-            }}
-          />
+          <input ref={fileInput} type="file" multiple className="hidden" onChange={(e) => {
+            void pickFiles(e.target.files);
+            e.target.value = "";
+          }} />
+          <input ref={imageInput} type="file" accept="image/*" multiple className="hidden" onChange={(e) => {
+            void pickFiles(e.target.files);
+            e.target.value = "";
+          }} />
+          <input ref={folderInput} type="file" multiple {...({ webkitdirectory: "", directory: "" } as Record<string, string>)} className="hidden" onChange={(e) => {
+            void pickFiles(e.target.files);
+            e.target.value = "";
+          }} />
           {!locked && !singleRow && (
             <div className={cn("flex items-center gap-1", simpleDock ? "shrink-0" : "flex-wrap")}>
-              {simpleDock && <ComposerPlusMenu onAttach={() => fileInput.current?.click()} goal={goal} teach={canLearn ? teachTask : undefined} />}
-              {advanced && <button
-                type="button"
-                onClick={() => fileInput.current?.click()}
-                aria-label={t("composer.attach")}
-                title={t("composer.attach")}
-                className="flex size-8 shrink-0 items-center justify-center rounded-full text-ink-secondary hover:bg-control hover:text-ink"
-              >
-                <Paperclip size={16} strokeWidth={1.75} absoluteStrokeWidth />
-              </button>}
+              {(simpleDock || advanced) && <ComposerPlusMenu
+                onAttach={() => fileInput.current?.click()}
+                onAttachImages={() => imageInput.current?.click()}
+                onAttachFolder={() => folderInput.current?.click()}
+                goal={goal}
+                teach={canLearn ? teachTask : undefined}
+                approval={approvalChoice && modeBot ? { name: modeBot.name, choice: approvalChoice } : undefined}
+                callBotId={bot && !group ? bot.id : undefined}
+              />}
               {/* Simple mode shows a mode's chip only while it is on, so a choice made in the + menu or the bot panel stays in view. */}
               {goal && (advanced || goal.on) && <GoalToggle {...goal} compact={simpleDock} />}
               {advanced && approvalChoice && <ApprovalModeSelector {...approvalChoice} />}
