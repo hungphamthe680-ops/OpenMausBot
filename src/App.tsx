@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, Loader2, Menu } from "lucide-react";
+import { ChevronLeft, Loader2, Menu, Sparkles } from "lucide-react";
 import { CLOUD_LINK_SETTINGS, openBot, StoreProvider, useStore } from "@/state/store";
 import { useShowThreads } from "@/lib/thread-preferences";
 import { useWelcomeViewer, WelcomeGate } from "@/components/onboarding/WelcomeGate";
@@ -14,6 +14,7 @@ import { initAnalytics } from "@/lib/analytics";
 import { parseComputerHelp } from "@/lib/computer-control";
 import { Sidebar } from "@/components/Sidebar";
 import { ChatView } from "@/components/ChatView";
+import { AgentWorkspace } from "@/components/AgentWorkspace";
 import { GroupView } from "@/components/GroupView";
 import { SIDEBAR_AND_PANEL_FIT, SIDEBAR_INLINE, TWO_SIDE_PANELS_FIT, useMediaQuery } from "@/lib/use-media-query";
 import { PluginsPanel, preloadConnectedApps } from "@/components/PluginsPanel";
@@ -138,6 +139,7 @@ function Shell({ viewer }: { viewer: WelcomeViewer | null }) {
   }, [language]);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [localVmWorkspaceBotId, setLocalVmWorkspaceBotId] = useState<string | null>(null);
+  const [agentWorkspaceOpen, setAgentWorkspaceOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const previousViewRef = useRef(state.activeView);
   const calendarOriginRef = useRef<"chat" | "team-map" | "web-panel">("chat");
@@ -380,7 +382,22 @@ function Shell({ viewer }: { viewer: WelcomeViewer | null }) {
       ) : group ? (
         <GroupView key={group.id} group={group} />
       ) : bot ? (
-        <ChatView bot={bot} />
+        <>
+          <div className="relative flex min-h-0 min-w-0 flex-1">
+            <ChatView bot={bot} />
+            <button
+              type="button"
+              aria-pressed={agentWorkspaceOpen}
+              aria-label={agentWorkspaceOpen ? "Đóng Agent Workspace" : "Mở Agent Workspace"}
+              title="Agent Workspace"
+              onClick={() => setAgentWorkspaceOpen((open) => !open)}
+              className={cn("absolute right-4 top-3 z-20 inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-[12px] font-medium shadow-sm backdrop-blur transition-colors", agentWorkspaceOpen ? "border-accent/40 bg-accent/12 text-accent" : "border-hairline/70 bg-card/90 text-ink-secondary hover:bg-raised hover:text-ink")}
+            >
+              <Sparkles size={15} /> <span className="hidden sm:inline">Agent Workspace</span>
+            </button>
+          </div>
+          {agentWorkspaceOpen && <AgentWorkspace key={bot.id} bot={bot} onClose={() => setAgentWorkspaceOpen(false)} />}
+        </>
       ) : (
         <main data-app-loading={loading.text} className="relative flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-3 bg-app text-ink-secondary">
           <WindowDragStrip />
