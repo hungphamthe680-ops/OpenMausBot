@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  Archive, CheckCircle2, Circle, Clock3, ListFilter, ListTodo, PauseCircle,
-  Search, Sparkles, X,
+  Archive, ArrowUpRight, CheckCircle2, Circle, Clock3, ListFilter, ListTodo, PauseCircle,
+  Plus, Search, Sparkles, X,
 } from "lucide-react";
-import type { Bot } from "@/state/store";
+import { useStore, type Bot } from "@/state/store";
 import { cn } from "@/lib/cn";
 
 type Props = { bot: Bot; onClose: () => void };
@@ -26,6 +26,7 @@ function taskDate(task: NonNullable<Bot["tasks"]>[number]): string | null {
 }
 
 export function AgentWorkspace({ bot, onClose }: Props) {
+  const { dispatch } = useStore();
   const tasks = bot.tasks ?? [];
   const activeCount = tasks.filter((task) => task.busy).length;
   const waitingCount = tasks.filter((task) => !task.busy && task.waitingForTeammates).length;
@@ -82,9 +83,18 @@ export function AgentWorkspace({ bot, onClose }: Props) {
               <p className="truncate text-[11px] text-ink-secondary">{bot.name} · Không gian tác vụ</p>
             </div>
           </div>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => { dispatch({ type: "newTask", botId: bot.id }); onClose(); }}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-accent/25 bg-accent/10 px-2.5 py-2 text-[11px] font-medium text-accent transition-colors hover:bg-accent/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+            >
+              <Plus size={14} /> Tác vụ mới
+            </button>
           <button type="button" onClick={onClose} aria-label="Đóng Agent Workspace" className="rounded-lg p-2 text-ink-secondary transition-colors hover:bg-raised hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent">
             <X size={17} />
           </button>
+          </div>
         </header>
 
         <section className="grid grid-cols-3 gap-2 border-b border-hairline/50 px-4 py-4" aria-label="Tổng quan tác vụ">
@@ -159,7 +169,7 @@ export function AgentWorkspace({ bot, onClose }: Props) {
                 const Icon = status.Icon;
                 const date = taskDate(task);
                 return (
-                  <li key={task.threadId} className="group rounded-xl border border-hairline/60 bg-card px-3.5 py-3 transition-colors hover:border-hairline hover:bg-raised/70">
+                  <li key={task.threadId} className={cn("group rounded-xl border px-3.5 py-3 transition-colors", task.threadId === bot.threadId ? "border-accent/35 bg-accent/[0.045]" : "border-hairline/60 bg-card hover:border-hairline hover:bg-raised/70")}>
                     <div className="flex items-start gap-2.5">
                       <span className={cn("mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg bg-inset", status.tone)}>
                         <Icon size={14} />
@@ -169,6 +179,21 @@ export function AgentWorkspace({ bot, onClose }: Props) {
                         <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
                           <span className={cn("text-[10px] font-medium", status.tone)}>{status.label}</span>
                           {date && <><span className="text-ink-tertiary">·</span><time className="text-[10px] text-ink-tertiary">{date}</time></>}
+                        </div>
+                        <div className="mt-2.5 flex justify-end">
+                          {task.threadId === bot.threadId ? (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-accent/10 px-2 py-1 text-[10px] font-medium text-accent">
+                              <CheckCircle2 size={12} /> Đang mở
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => { dispatch({ type: "switchTask", botId: bot.id, threadId: task.threadId }); onClose(); }}
+                              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium text-ink-secondary transition-colors hover:bg-accent/10 hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+                            >
+                              Mở hội thoại <ArrowUpRight size={12} />
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -185,7 +210,7 @@ export function AgentWorkspace({ bot, onClose }: Props) {
             <div className="min-w-0">
               <p className="text-[10px] font-semibold text-ink">Dữ liệu phiên làm việc</p>
               <p className="mt-0.5 break-all text-[10px] leading-4 text-ink-secondary">Thread: {bot.threadId}</p>
-              <p className="mt-1 text-[10px] leading-4 text-ink-tertiary">Trạng thái lấy từ dữ liệu tác vụ hiện có. Bảng này không tự chạy Agent hoặc giả lập tiến trình.</p>
+              <p className="mt-1 text-[10px] leading-4 text-ink-tertiary">Chọn một tác vụ để mở lại đúng hội thoại; tạo tác vụ mới bằng nút phía trên. Việc chạy Agent tiếp tục qua luồng chat gốc.</p>
             </div>
           </div>
         </footer>
