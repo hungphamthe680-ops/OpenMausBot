@@ -19,6 +19,13 @@ on:
         description: "Commit/tag/branch to build (defaults to the branch this is run from)"
         required: false
         type: string
+  # Build a reviewable Windows installer for this feature branch without
+  # publishing a GitHub release. The normal release workflow remains the only
+  # workflow allowed to publish releases.
+  push:
+    branches: [feature/agent-workspace-premium-ui]
+  pull_request:
+    branches: [main]
 
 jobs:
   package:

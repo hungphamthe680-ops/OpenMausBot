@@ -154,7 +154,8 @@ describe("bot setup and tools in the real renderer", () => {
     await ui("type", "--ref", `@${textarea![0]}`, "--text", JSON.stringify({ mcpServers: {
       fixture: { command: process.execPath, args: ["-e", "process.exit(0)"] },
     } }));
-    await click("Add");
+    // Scope the MCP add action to its setup dialog; another settings control may also be named "Add".
+    await evaluate("(() => { const dialog = [...document.querySelectorAll('[role=dialog]')].find(node => node.querySelector('textarea[aria-label=\"Server link or setup command\"]')); const button = [...(dialog?.querySelectorAll('button') ?? [])].find(node => node.textContent.trim() === 'Add'); if (!button) throw new Error('MCP setup dialog Add button was not found'); button.click(); return true; })()");
     const registry = async () => (await fetch(`${info.url}/api/mcp/servers`).then((response) => response.json())).servers;
     // It exits before answering, so it is saved but stays off, with the reason on its row.
     await expect.poll(registry, { timeout: 10_000 }).toMatchObject([{ name: "fixture", enabled: false }]);

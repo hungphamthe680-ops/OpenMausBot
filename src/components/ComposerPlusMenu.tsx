@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
-import { AudioLines, Check, GraduationCap, ListChecks, Paperclip, Phone, Plus, Target, X } from "lucide-react";
+import { AudioLines, Check, FolderOpen, GraduationCap, ImagePlus, ListChecks, Paperclip, Phone, Plus, Target, X } from "lucide-react";
 import { approvalModeFor } from "../../shared/approval-mode";
 import {
   approvalModeOptions,
@@ -153,8 +153,10 @@ export function ApprovalChip({ choice, quiet = false }: { choice: ApprovalChoice
  * holds what its narrow composer has no room for: the thread's approval level, the call mode and where the bot works,
  * each running the handler its Advanced button runs. With attaching the only choice, the + opens the file picker.
  */
-export function ComposerPlusMenu({ onAttach, goal, teach, approval, callBotId, extraItems = [], circle = false }: {
+export function ComposerPlusMenu({ onAttach, onAttachImages, onAttachFolder, goal, teach, approval, callBotId, extraItems = [], circle = false }: {
   onAttach: () => void;
+  onAttachImages?: () => void;
+  onAttachFolder?: () => void;
   /** Starts a /learn draft in the field, where the composer offers /learn. */
   teach?: () => void;
   /** Entries a phone composer moves here from its hidden buttons, such as where the bot works. */
@@ -179,7 +181,9 @@ export function ComposerPlusMenu({ onAttach, goal, teach, approval, callBotId, e
   const calling = callBotId !== undefined && (onCall === callBotId || isLiveCallRunning(media.phase) || lineHeldElsewhere);
   const simple = !useAdvancedMode();
   const items: SidebarMenuItem[] = [
-    { key: "attach", label: t("composer.attachFiles"), icon: <Paperclip size={16} />, onSelect: onAttach },
+    { key: "attach", label: "Tệp từ thiết bị", icon: <Paperclip size={16} />, onSelect: onAttach },
+    ...(onAttachImages ? [{ key: "images", label: "Ảnh và hình ảnh", icon: <ImagePlus size={16} />, onSelect: onAttachImages } satisfies SidebarMenuItem] : []),
+    ...(onAttachFolder ? [{ key: "folder", label: "Chọn thư mục", icon: <FolderOpen size={16} />, onSelect: onAttachFolder } satisfies SidebarMenuItem] : []),
     ...(goal ? [{
       key: "goal",
       label: t(goal.solo ? "composer.goal.soloAria" : "composer.goal.aria"),
