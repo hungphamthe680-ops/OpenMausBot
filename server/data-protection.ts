@@ -33,16 +33,21 @@ export interface ConsentChallenge { id: string; provider: string; payloadHash: s
 /** One-use approval bound to an exact provider and exact payload hash. */
 export class OutboundConsentGate {
   readonly #pending = new Map<string, ConsentChallenge>();
-  constructor(private readonly ttlMs = 120_000, private readonly now = () => Date.now()) {}
+  readonly #ttlMs: number;
+  readonly #now: () => number;
+  constructor(ttlMs = 120_000, now = () => Date.now()) {
+    this.#ttlMs = ttlMs;
+    this.#now = now;
+  }
   request(provider: string, payload: string): ConsentChallenge {
-    const challenge = { id: randomUUID(), provider, payloadHash: createHash("sha256").update(payload).digest("hex"), expiresAt: this.now() + this.ttlMs };
+    const challenge = { id: randomUUID(), provider, payloadHash: createHash("sha256").update(payload).digest("hex"), expiresAt: this.#now() + this.#ttlMs };
     this.#pending.set(challenge.id, challenge);
     return { ...challenge };
   }
   approve(id: string, provider: string, payload: string): boolean {
     const challenge = this.#pending.get(id);
     this.#pending.delete(id);
-    if (!challenge || challenge.expiresAt < this.now() || challenge.provider !== provider) return false;
+    if (!challenge || challenge.expiresAt <= this.#now() || challenge.provider !== provider) return false;
     return challenge.payloadHash === createHash("sha256").update(payload).digest("hex");
   }
   clear(): void { this.#pending.clear(); }
