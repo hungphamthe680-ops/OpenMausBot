@@ -33,7 +33,7 @@ Existing harness + permission broker + MCP registry
 - Reads and writes resolve symlinks and verify the canonical path remains inside an approved root.
 - The service never deletes files, never overwrites existing outputs and never edits the source document/workbook. Generated files must use a new filename.
 - Large files, search results, page counts, rows, sheets and text previews are capped.
-- Macro-enabled workbooks are preserved as `.xlsm`; macros are not executed.
+- Macro-enabled workbooks are preserved as `.xlsm`; macros are not executed. Word automation disables VBA/AutoOpen macros before exporting to PDF.
 - Printing is intentionally not exposed as a direct tool. Ask the user to review and approve the final document, open it, then use CUA to operate the print dialog. This keeps the final irreversible action visible.
 - Logs go to stderr and should contain operational metadata only, not document contents or credentials.
 
