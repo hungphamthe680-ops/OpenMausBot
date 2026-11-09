@@ -36,7 +36,7 @@ def create_docx_from_template(template_path: str, output_path: str, replacements
 
 
 @mcp.tool()
-def update_workbook_copy(source_path: str, output_path: str, updates: list[dict[str, str]]) -> str:
+def update_workbook_copy(source_path: str, output_path: str, updates: list[dict[str, object]]) -> str:
     """Create a separate XLSX/XLSM copy and update selected cells; the source workbook is preserved."""
     return office_ops.update_workbook_copy(source_path, output_path, updates)
 
