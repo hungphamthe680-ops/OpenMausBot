@@ -265,7 +265,7 @@ def create_docx_from_template(template_path: str, output_path: str, replacements
                        "unmatched_placeholders": [key for key, count in replacement_counts.items() if count == 0]}, ensure_ascii=False)
 
 
-def update_workbook_copy(source_path: str, output_path: str, updates: list[dict[str, str]]) -> str:
+def update_workbook_copy(source_path: str, output_path: str, updates: list[dict[str, Any]]) -> str:
     source = _resolve_read(source_path)
     suffix = source.suffix.lower()
     if suffix not in {".xlsx", ".xlsm"}:
@@ -282,6 +282,12 @@ def update_workbook_copy(source_path: str, output_path: str, updates: list[dict[
         if set(item) != {"sheet", "cell", "value"}:
             raise ValueError("Mỗi cập nhật phải có đúng ba trường: sheet, cell, value.")
         sheet_name, address, value = item["sheet"], item["cell"], item["value"]
+        if not isinstance(sheet_name, str) or not isinstance(address, str):
+            raise ValueError("sheet và cell phải là chuỗi.")
+        if not (value is None or isinstance(value, (str, int, float, bool))):
+            raise ValueError("value chỉ nhận chuỗi, số, boolean hoặc null.")
+        if isinstance(value, float) and (value != value or value in (float("inf"), float("-inf"))):
+            raise ValueError("Không chấp nhận giá trị số không hữu hạn.")
         if sheet_name not in workbook.sheetnames:
             raise ValueError(f"Không tìm thấy sheet: {sheet_name}")
         if not re.fullmatch(r"[A-Z]{1,3}[1-9][0-9]{0,6}", address.upper()):
@@ -313,6 +319,8 @@ def export_word_to_pdf(raw_path: str, output_path: str) -> str:
         word = win32com.client.DispatchEx("Word.Application")
         word.Visible = False
         word.DisplayAlerts = 0
+        # msoAutomationSecurityForceDisable: do not run VBA macros or AutoOpen code.
+        word.AutomationSecurity = 3
         document = word.Documents.Open(str(source), ReadOnly=True, AddToRecentFiles=False, ConfirmConversions=False)
         document.SaveAs2(str(output), FileFormat=17)
     finally:
