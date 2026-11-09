@@ -7,15 +7,15 @@ $VenvPython = Join-Path $AgentDir ".venv\Scripts\python.exe"
 
 function Find-Python {
     $candidates = @(
-        @{ Command = "py"; Args = @("-3.11", "--version") },
-        @{ Command = "python"; Args = @("--version") },
-        @{ Command = "python3"; Args = @("--version") }
+        @{ Command = "py"; ProbeArgs = @("-3", "--version"); PrefixArgs = @("-3") },
+        @{ Command = "python"; ProbeArgs = @("--version"); PrefixArgs = @() },
+        @{ Command = "python3"; ProbeArgs = @("--version"); PrefixArgs = @() }
     )
     foreach ($item in $candidates) {
         $cmd = Get-Command $item.Command -ErrorAction SilentlyContinue
         if (-not $cmd) { continue }
         try {
-            $versionText = & $item.Command @($item.Args) 2>&1 | Out-String
+            $versionText = & $item.Command @($item.ProbeArgs) 2>&1 | Out-String
             if ($LASTEXITCODE -eq 0 -and $versionText -match "Python\s+(\d+)\.(\d+)") {
                 $major = [int]$Matches[1]; $minor = [int]$Matches[2]
                 if ($major -gt 3 -or ($major -eq 3 -and $minor -ge 11)) {
