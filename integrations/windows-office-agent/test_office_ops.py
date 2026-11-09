@@ -65,5 +65,40 @@ class OfficeOpsTests(unittest.TestCase):
         self.assertTrue(template.exists())
 
 
+    def test_inspects_pdf_page_count(self):
+        from pypdf import PdfWriter
+        path = self.root / "sample.pdf"
+        writer = PdfWriter()
+        writer.add_blank_page(width=595, height=842)
+        with path.open("wb") as handle:
+            writer.write(handle)
+        result = office_ops.inspect_document(str(path))
+        self.assertIn('"page_count": 1', result)
+
+    def test_updates_workbook_copy_with_typed_values_and_preserves_source(self):
+        from openpyxl import Workbook, load_workbook
+        source = self.root / "source.xlsx"
+        output = self.root / "updated.xlsx"
+        workbook = Workbook()
+        workbook.active.title = "Theo doi"
+        workbook["Theo doi"]["A1"] = "Goc"
+        workbook.save(source)
+        workbook.close()
+
+        office_ops.update_workbook_copy(
+            str(source), str(output),
+            [
+                {"sheet": "Theo doi", "cell": "A1", "value": 250000},
+                {"sheet": "Theo doi", "cell": "A2", "value": "=SUM(100,200)"},
+            ],
+        )
+        original = load_workbook(source, data_only=False)
+        changed = load_workbook(output, data_only=False)
+        self.assertEqual(original["Theo doi"]["A1"].value, "Goc")
+        self.assertEqual(changed["Theo doi"]["A1"].value, 250000)
+        self.assertEqual(changed["Theo doi"]["A2"].value, "=SUM(100,200)")
+        original.close()
+        changed.close()
+
 if __name__ == "__main__":
     unittest.main()
