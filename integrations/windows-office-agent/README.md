@@ -90,6 +90,10 @@ The MCP entry stores its environment with the local server configuration. Keep a
 
 DOCX placeholders should appear entirely within one Word text run (for example `{{HO_TEN}}`). If a placeholder was split by Word formatting into multiple runs, the operation refuses rather than silently damaging formatting.
 
+### Excel compatibility note
+
+The workbook writer uses `openpyxl`: it preserves ordinary cell values, formulas, styles and VBA payloads in `.xlsm`, but it does not run Excel or recalculate formulas. Formula results refresh when the workbook is opened in Excel. Advanced workbook components such as some pivot caches, slicers, embedded OLE objects, Power Query connections and unsupported chart extensions may not round-trip perfectly. For a workbook that relies on those features, use the Agent to inspect it and then use the existing CUA/Excel UI for edits, or keep the original untouched and review the generated copy carefully before relying on it.
+
 ## Suggested operating pattern
 
 1. **Read:** find the source file and inspect it. Show the file path and a short summary to the user.
